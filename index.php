@@ -11,7 +11,7 @@
             <?php
             require_once dirname(__FILE__) . '/Message.php';
             $Message = new Message();
-            $Data    = $Message->index();
+            $Data = $Message->index();
             ?>
 
             <div class="row">
@@ -73,7 +73,8 @@
                                     for ($i = 1; $i <= $page_max; $i++) {
                                         ?>
 
-                                        <li class="page-item<?php if ($i == $page_now) echo ' active';?>">
+                                        <li class="page-item<?php if ($i == $page_now)
+                                            echo ' active'; ?>">
                                             <a class="page-link" href="./?page=<?php echo $i; ?>">
                                                 <?php echo $i; ?>
                                             </a>

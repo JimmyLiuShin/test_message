@@ -1,5 +1,5 @@
 <?php
-require_once dirname(__FILE__) . '/sql.php';
+require_once dirname(__FILE__) . '/Sql.php';
 
 new Message();
 
