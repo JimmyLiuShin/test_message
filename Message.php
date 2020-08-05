@@ -57,10 +57,10 @@ class Message
             'message_status' => 1
         ];
         $count = isset($_GET['count']) ? (int)$_GET['count'] : 10;
-        $page  = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $limit = $this->setPage($where, $page, $count);
-        $list  = $this->sqlMap->getAll('message', $where, $limit);
-        $list  = ($list === null) ? [] : $list;
+        $list = $this->sqlMap->getAll('message', $where, $limit);
+        $list = ($list === null) ? [] : $list;
 
         return ['list' => $list, 'limit' => $limit];
     }
@@ -71,12 +71,12 @@ class Message
     protected function add()
     {
         $insertData = [
-            'message_person'  => isset($_POST['person']) ? urlencode($_POST['person']) : '',
+            'message_person' => isset($_POST['person']) ? urlencode($_POST['person']) : '',
             'message_content' => isset($_POST['content']) ? urlencode($_POST['content']) : null,
-            'message_time'    => date('Y-m-d H:i:s'),
-            'message_status'  => 1,
+            'message_time' => date('Y-m-d H:i:s'),
+            'message_status' => 1,
         ];
-        $warning    = $this->addCheck($insertData);
+        $warning = $this->addCheck($insertData);
 
         if ($warning == null) {
             $this->sqlMap->insertData('message', $insertData);
@@ -99,10 +99,10 @@ class Message
 
         if ($id > 0 && gettype($id) == 'integer') {
             $where = [
-                'id'             => $id,
+                'id' => $id,
                 'message_status' => 1
             ];
-            $item  = $this->sqlMap->getOne('message', $where);
+            $item = $this->sqlMap->getOne('message', $where);
 
             if ($item) {
                 return $item;
@@ -133,12 +133,12 @@ class Message
      */
     protected function edit()
     {
-        $id         = $_POST['id'] ? (int)$_POST['id'] : 0;
+        $id = $_POST['id'] ? (int)$_POST['id'] : 0;
         $updateData = [
-            'message_person'  => isset($_POST['person']) ? urlencode($_POST['person']) : '',
+            'message_person' => isset($_POST['person']) ? urlencode($_POST['person']) : '',
             'message_content' => isset($_POST['content']) ? urlencode($_POST['content']) : null
         ];
-        $warning    = $this->addCheck($updateData);
+        $warning = $this->addCheck($updateData);
 
         if ($id > 0 && $warning == null) {
             $this->sqlMap->updateData('message', ['id' => $id], $updateData);
@@ -177,12 +177,12 @@ class Message
     {
         $total = $this->sqlMap->getCount('message', $condition);
         $limit = [
-            'total'    => $total,
-            'count'    => $count,
+            'total' => $total,
+            'count' => $count,
             'page_now' => $page,
             'page_max' => ceil($total / $count),
-            'start'    => $count * ($page - 1),
-            'final'    => ($count * $page) - 1
+            'start' => $count * ($page - 1),
+            'final' => ($count * $page) - 1
         ];
 
         if ($limit['page_now'] <= 0) {

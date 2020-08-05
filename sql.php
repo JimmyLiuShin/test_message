@@ -21,11 +21,11 @@ class Sql
      */
     protected $tableFieldMap = [
         'message' => [
-            'id'              => 'int',
-            'message_person'  => 'str',
+            'id' => 'int',
+            'message_person' => 'str',
             'message_content' => 'str',
-            'message_time'    => 'str',
-            'message_status'  => 'int',
+            'message_time' => 'str',
+            'message_status' => 'int',
         ]
     ];
 
@@ -41,7 +41,7 @@ class Sql
         if ($table && !empty($where)) {
             $connPrepare = $this->prep('count', $table, $where);
             $connPrepare = $this->combine('count', $connPrepare, $where, $table);
-            $result      = $this->output('one', $connPrepare);
+            $result = $this->output('one', $connPrepare);
 
             if ($result) {
                 return $result['COUNT(1)'];
@@ -63,7 +63,7 @@ class Sql
         if ($table && !empty($where)) {
             $connPrepare = $this->prep('select', $table, $where);
             $connPrepare = $this->combine('select', $connPrepare, $where, $table);
-            $result      = $this->output('one', $connPrepare);
+            $result = $this->output('one', $connPrepare);
 
             if ($result) {
                 return $result;
@@ -86,7 +86,7 @@ class Sql
         if ($table) {
             $connPrepare = $this->prep('select', $table, $where, $limit);
             $connPrepare = $this->combine('select', $connPrepare, $where, $table);
-            $result      = $this->output('all', $connPrepare);
+            $result = $this->output('all', $connPrepare);
 
             if ($result) {
                 return $result;
@@ -136,36 +136,36 @@ class Sql
      */
     protected function prep($method = '', $table = '', $data = [], $limit = [])
     {
-        $string  = '';
+        $string = '';
         $Connect = $this->connection();
 
         if ($table != '') {
             if ($method == 'count') {
-                $string      .= 'SELECT COUNT(1) ';
-                $string      .= 'FROM ' . $this->tableNameMap[$table] . ' ';
-                $string      .= $this->prepString($method, $data);
+                $string .= 'SELECT COUNT(1) ';
+                $string .= 'FROM ' . $this->tableNameMap[$table] . ' ';
+                $string .= $this->prepString($method, $data);
                 $connPrepare = $Connect->prepare($string);
             }
 
             if ($method == 'select') {
-                $string      .= 'SELECT * ';
-                $string      .= 'FROM ' . $this->tableNameMap[$table] . ' ';
-                $string      .= $this->prepString($method, $data);
-                $string      .= $this->prepString($method, $limit, null, 'limit');
+                $string .= 'SELECT * ';
+                $string .= 'FROM ' . $this->tableNameMap[$table] . ' ';
+                $string .= $this->prepString($method, $data);
+                $string .= $this->prepString($method, $limit, null, 'limit');
                 $connPrepare = $Connect->prepare($string);
             }
 
             if ($method == 'insert') {
-                $string      .= 'INSERT INTO ' . $this->tableNameMap[$table];
-                $string      .= $this->prepString($method, null, $table, 'field');
-                $string      .= $this->prepString($method, null, $table);
+                $string .= 'INSERT INTO ' . $this->tableNameMap[$table];
+                $string .= $this->prepString($method, null, $table, 'field');
+                $string .= $this->prepString($method, null, $table);
                 $connPrepare = $Connect->prepare($string);
             }
 
             if ($method == 'update') {
-                $string      .= 'UPDATE ' . $this->tableNameMap[$table];
-                $string      .= $this->prepString($method, $data, $table, 'value');
-                $string      .= $this->prepString($method, $limit, $table, 'field');
+                $string .= 'UPDATE ' . $this->tableNameMap[$table];
+                $string .= $this->prepString($method, $data, $table, 'value');
+                $string .= $this->prepString($method, $limit, $table, 'field');
                 $connPrepare = $Connect->prepare($string);
             }
         }
@@ -346,11 +346,11 @@ class Sql
      */
     protected function connection()
     {
-        $databaseHost     = 'localhost';
-        $databaseUser     = 'message';
+        $databaseHost = 'localhost';
+        $databaseUser = 'message';
         $databasePassword = '4W;<EH.FHB;rt2ugW%Pb';
-        $databaseName     = 'shin_message';
-        $databaseConnect  = 'mysql:host=' . $databaseHost . ';dbname=' . $databaseName;
+        $databaseName = 'shin_message';
+        $databaseConnect = 'mysql:host=' . $databaseHost . ';dbname=' . $databaseName;
         try {
             $conn = new PDO($databaseConnect, $databaseUser, $databasePassword);
             $conn->exec('SET CHARACTER SET utf8');
