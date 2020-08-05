@@ -1,6 +1,6 @@
 <?php
-
 require_once dirname(__FILE__) . '/Sql.php';
+require_once dirname(__FILE__) . '/Method.php';
 
 new Message();
 
@@ -15,7 +15,7 @@ class Message
      * @var array
      */
     protected $urlNameMap = [
-        'index' => './'
+        'index' => './',
     ];
 
     /**
@@ -26,8 +26,12 @@ class Message
     protected $sqlMap;
 
     /**
-     * 建構子
+     * 提示
+     *
+     * @var string
      */
+    protected $alertMap = '?alert=';
+
     public function __construct()
     {
         $this->sqlMap = new Sql();
@@ -39,7 +43,8 @@ class Message
      */
     public function selectFunction()
     {
-        $selected = isset($_POST['method']) ? $_POST['method'] : (isset($_GET['method']) ? $_GET['method'] : null);
+        $selected = isset($_POST['method']) ? $_POST['method'] : null;
+        $selected = isset($_GET['method']) ? $_GET['method'] : $selected;
         $selected = $selected ? $selected : 'index';
 
         if (method_exists($this, $selected)) {
@@ -55,42 +60,47 @@ class Message
     public function index()
     {
         $where = [
-            'message_status' => 1
+            'message_status' => 1,
         ];
+
         $count = isset($_GET['count']) ? (int)$_GET['count'] : 10;
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $limit = $this->setPage($where, $page, $count);
-        $list = $this->sqlMap->getAll('message', $where, $limit);
+        $list = $this->sqlMap->getSelected($where, $limit);
         $list = ($list === null) ? [] : $list;
 
         return ['list' => $list, 'limit' => $limit];
     }
 
     /**
-     * 新增 message
+     * 新增留言
      */
     protected function add()
     {
         $insertData = [
-            'message_person' => isset($_POST['person']) ? urlencode($_POST['person']) : '',
+            'message_person' => isset($_POST['person']) ? urlencode($_POST['person']) : null,
             'message_content' => isset($_POST['content']) ? urlencode($_POST['content']) : null,
             'message_time' => date('Y-m-d H:i:s'),
             'message_status' => 1,
         ];
-        $warning = $this->addCheck($insertData);
 
-        if ($warning == null) {
-            $this->sqlMap->insertData('message', $insertData);
-            setcookie('success', '新增成功');
-            header('Location:' . $this->urlNameMap['index']);
+        if ($this->addCheck($insertData)) {
+            $insertId = $this->sqlMap->insertData($insertData);
+
+            if ($insertId > 0) {
+                $this->alertMap .= 'success';
+            } else {
+                $this->alertMap .= 'error';
+            }
         } else {
-            setcookie('warning', $warning);
-            header('Location:' . $this->urlNameMap['index']);
+            $this->alertMap .= 'error';
         }
+
+        Method::setLocation($this->urlNameMap['index'] . $this->alertMap);
     }
 
     /**
-     * 搜尋單筆 message
+     * 搜尋單筆留言
      *
      * @return array
      */
@@ -101,69 +111,85 @@ class Message
         if ($id > 0 && gettype($id) == 'integer') {
             $where = [
                 'id' => $id,
-                'message_status' => 1
+                'message_status' => 1,
             ];
-            $item = $this->sqlMap->getOne('message', $where);
+
+            $item = $this->sqlMap->getOne($where);
 
             if ($item) {
                 return $item;
             }
         }
-        setcookie('warning', '找不到該筆資料');
-        header('Location:' . $this->urlNameMap['index']);
+
+        $this->alertMap .= 'error';
+        Method::setLocation($this->urlNameMap['index'] . $this->alertMap);
     }
 
     /**
-     * 刪除 message
+     * 刪除留言
      */
     protected function delete()
     {
         $id = $_POST['id'] ? (int)$_POST['id'] : 0;
 
         if ($id > 0) {
-            $this->sqlMap->updateData('message', ['id' => $id], ['message_status' => 2]);
-            setcookie('success', '刪除成功');
+            $rowCount = $this->sqlMap->updateData(['id' => $id], ['message_status' => 2]);
+
+            if ($rowCount > 0) {
+                $this->alertMap .= 'success';
+            } else {
+                $this->alertMap .= 'error';
+            }
         } else {
-            setcookie('warning', '刪除失敗');
+            $this->alertMap .= 'error';
         }
-        header('Location:' . $this->urlNameMap['index']);
+
+        Method::setLocation($this->urlNameMap['index'] . $this->alertMap);
     }
 
     /**
-     * 修改 message
+     * 修改留言
      */
     protected function edit()
     {
         $id = $_POST['id'] ? (int)$_POST['id'] : 0;
         $updateData = [
-            'message_person' => isset($_POST['person']) ? urlencode($_POST['person']) : '',
-            'message_content' => isset($_POST['content']) ? urlencode($_POST['content']) : null
+            'message_person' => isset($_POST['person']) ? urlencode($_POST['person']) : null,
+            'message_content' => isset($_POST['content']) ? urlencode($_POST['content']) : null,
         ];
-        $warning = $this->addCheck($updateData);
 
-        if ($id > 0 && $warning == null) {
-            $this->sqlMap->updateData('message', ['id' => $id], $updateData);
-            setcookie('success', '修改成功');
-            header('Location:' . $this->urlNameMap['index']);
+        if ($id > 0 && $this->addCheck($updateData)) {
+            $rowCount = $this->sqlMap->updateData(['id' => $id], $updateData);
+
+            if ($rowCount > 0) {
+                $this->alertMap .= 'success';
+            } else {
+                $this->alertMap .= 'error';
+            }
         } else {
-            setcookie('warning', $warning);
-            header('Location:' . $this->urlNameMap['index']);
+            $this->alertMap .= 'error';
         }
+
+        Method::setLocation($this->urlNameMap['index'] . $this->alertMap);
     }
 
     /**
      * 檢查 新增內容
      *
      * @params array $data 資料
-     * @return string | null
+     * @return boolean
      */
     protected function addCheck($data)
     {
-        if ($data['message_content'] == null) {
-            return '請輸入內容';
+        if ($data['message_person'] == null) {
+            return false;
         }
 
-        return null;
+        if ($data['message_content'] == null) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -176,14 +202,14 @@ class Message
      */
     protected function setPage($condition = [], $page = 1, $count = 10)
     {
-        $total = $this->sqlMap->getCount('message', $condition);
+        $total = $this->sqlMap->getCount($condition);
         $limit = [
             'total' => $total,
             'count' => $count,
             'page_now' => $page,
             'page_max' => ceil($total / $count),
             'start' => $count * ($page - 1),
-            'final' => ($count * $page) - 1
+            'final' => ($count * $page) - 1,
         ];
 
         if ($limit['page_now'] <= 0) {

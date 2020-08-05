@@ -32,16 +32,17 @@ class Sql
     /**
      * 取得符合條件之資料個數
      *
-     * @params string $table 表名
      * @params array $where SQL條件
      * @return integer
      */
-    public function getCount($table = '', $where = [])
+    public function getCount($where = [])
     {
-        if ($table && !empty($where)) {
-            $connPrepare = $this->prep('count', $table, $where);
-            $connPrepare = $this->combine('count', $connPrepare, $where, $table);
+        if (!empty($where)) {
+            $connect = $this->connection();
+            $connPrepare = $this->prep($connect, 'count', $where);
+            $connPrepare = $this->combine('count', $connPrepare, $where);
             $result = $this->output('one', $connPrepare);
+            $connect = null;
 
             if ($result) {
                 return $result['COUNT(1)'];
@@ -54,39 +55,17 @@ class Sql
     /**
      * 取得一筆資料
      *
-     * @params string $table 表名
      * @params array $where SQL條件
-     * @return null
-     */
-    public function getOne($table = '', $where = [])
-    {
-        if ($table && !empty($where)) {
-            $connPrepare = $this->prep('select', $table, $where);
-            $connPrepare = $this->combine('select', $connPrepare, $where, $table);
-            $result = $this->output('one', $connPrepare);
-
-            if ($result) {
-                return $result;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * 取得多筆資料
-     *
-     * @params string $table 表名
-     * @params array $where SQL條件
-     * @params array $limit 輸出限制
      * @return array
      */
-    public function getAll($table = '', $where = [], $limit = [])
+    public function getOne($where = [])
     {
-        if ($table) {
-            $connPrepare = $this->prep('select', $table, $where, $limit);
-            $connPrepare = $this->combine('select', $connPrepare, $where, $table);
-            $result = $this->output('all', $connPrepare);
+        if (!empty($where)) {
+            $connect = $this->connection();
+            $connPrepare = $this->prep($connect, 'select', $where);
+            $connPrepare = $this->combine('select', $connPrepare, $where);
+            $result = $this->output('one', $connPrepare);
+            $connect = null;
 
             if ($result) {
                 return $result;
@@ -97,77 +76,114 @@ class Sql
     }
 
     /**
+     * 取得多筆資料
+     *
+     * @params array $where SQL條件
+     * @params array $limit 輸出限制
+     * @return array
+     */
+    public function getSelected($where = [], $limit = [])
+    {
+        $connect = $this->connection();
+        $connPrepare = $this->prep($connect, 'select', $where, $limit);
+        $connPrepare = $this->combine('select', $connPrepare, $where);
+        $result = $this->output('all', $connPrepare);
+        $connect = null;
+
+        if ($result) {
+            return $result;
+        }
+
+        return [];
+    }
+
+    /**
      * 新增資料
      *
-     * @params string $table 表名
      * @params array $data 新增內容
+     * @return integer
      */
-    public function insertData($table = '', $data = [])
+    public function insertData($data = [])
     {
-        if ($table && !empty($data)) {
-            $connPrepare = $this->prep('insert', $table);
-            $this->combine('insert', $connPrepare, $data, $table);
+        $insertId = 0;
+
+        if (!empty($data)) {
+            $connect = $this->connection();
+            $connPrepare = $this->prep($connect, 'insert');
+            $this->combine('insert', $connPrepare, $data);
+            $insertId = $connect->lastInsertId();
+            $connect = null;
         }
+
+        return $insertId;
     }
 
     /**
      * 更新資料
      *
-     * @params string $table 表名
      * @params array $key 條件
      * @params array $update 更新內容
+     * @return integer
      */
-    public function updateData($table = '', $key = [], $update = [])
+    public function updateData($key = [], $update = [])
     {
-        if ($table && !empty($update)) {
-            $connPrepare = $this->prep('update', $table, $update, $key);
-            $this->combine('update', $connPrepare, $update, $table, $key);
+        $insertRow = 0;
+
+        if (!empty($update)) {
+            $connect = $this->connection();
+            $connPrepare = $this->prep($connect, 'update', $update, $key);
+            $connPrepare = $this->combine('update', $connPrepare, $update, $key);
+            $insertRow = $connPrepare->rowCount();
+            $connect = null;
         }
+
+        return $insertRow;
     }
 
     /**
      * SQL預處理
      *
+     * @params object $connect SQL連線
      * @params string $method 處理方法
-     * @params string $table 資料表名
      * @params array $data 資料內容 | 條件
      * @params array $limit 條件
      * @return object | null
      */
-    protected function prep($method = '', $table = '', $data = [], $limit = [])
+    protected function prep($connect, $method = '', $data = [], $limit = [])
     {
         $string = '';
-        $Connect = $this->connection();
 
-        if ($table != '') {
-            if ($method == 'count') {
-                $string .= 'SELECT COUNT(1) ';
-                $string .= 'FROM ' . $this->tableNameMap[$table] . ' ';
-                $string .= $this->prepString($method, $data);
-                $connPrepare = $Connect->prepare($string);
-            }
+        if ($method == 'count') {
+            $string .= 'SELECT COUNT(1) ';
+            $string .= 'FROM ' . $this->tableNameMap['message'] . ' ';
+            $string .= $this->prepString($method, $data);
 
-            if ($method == 'select') {
-                $string .= 'SELECT * ';
-                $string .= 'FROM ' . $this->tableNameMap[$table] . ' ';
-                $string .= $this->prepString($method, $data);
-                $string .= $this->prepString($method, $limit, null, 'limit');
-                $connPrepare = $Connect->prepare($string);
-            }
+            $connPrepare = $connect->prepare($string);
+        }
 
-            if ($method == 'insert') {
-                $string .= 'INSERT INTO ' . $this->tableNameMap[$table];
-                $string .= $this->prepString($method, null, $table, 'field');
-                $string .= $this->prepString($method, null, $table);
-                $connPrepare = $Connect->prepare($string);
-            }
+        if ($method == 'select') {
+            $string .= 'SELECT * ';
+            $string .= 'FROM ' . $this->tableNameMap['message'] . ' ';
+            $string .= $this->prepString($method, $data);
+            $string .= $this->prepString($method, $limit, 'limit');
 
-            if ($method == 'update') {
-                $string .= 'UPDATE ' . $this->tableNameMap[$table];
-                $string .= $this->prepString($method, $data, $table, 'value');
-                $string .= $this->prepString($method, $limit, $table, 'field');
-                $connPrepare = $Connect->prepare($string);
-            }
+            $connPrepare = $connect->prepare($string);
+        }
+
+        if ($method == 'insert') {
+            $string .= 'INSERT INTO ' . $this->tableNameMap['message'] . '';
+            $string .= $this->prepString($method, null, 'field') . ' ';
+            $string .= $this->prepString($method, null);
+
+            $connPrepare = $connect->prepare($string);
+        }
+
+        if ($method == 'update') {
+            $string .= 'UPDATE ' . $this->tableNameMap['message'];
+            $string .= $this->prepString($method, $data, 'value');
+            $string .= $this->prepString($method, $limit, 'field');
+
+            $connPrepare = $connect->prepare($string);
         }
 
         if (isset($connPrepare)) {
@@ -182,11 +198,10 @@ class Sql
      *
      * @params string $method 處理方法
      * @params string $data 資料
-     * @params array $table 資料表名
      * @params array $mode 功能
      * @return string
      */
-    protected function prepString($method = '', $data = [], $table = '', $mode = '')
+    protected function prepString($method = '', $data = [], $mode = '')
     {
         if ($method == 'count' || $method == 'select') {
             $condition = [];
@@ -201,6 +216,7 @@ class Sql
                         $sort++;
                     }
                 }
+
                 $result = !empty($condition) ? 'WHERE ' . implode(' and ', $condition) : '';
             }
         }
@@ -208,8 +224,8 @@ class Sql
         if ($method == 'insert') {
             $condition = [];
 
-            if (isset($this->tableFieldMap[$table])) {
-                foreach ($this->tableFieldMap[$table] as $k => $v) {
+            if (isset($this->tableFieldMap['message'])) {
+                foreach ($this->tableFieldMap['message'] as $k => $v) {
                     if ($k != 'id') {
                         if ($mode == 'field') {
                             $condition[] = $k;
@@ -244,6 +260,7 @@ class Sql
                 $result = !empty($condition) ? ' SET ' . implode(', ', $condition) : '';
             }
         }
+
         return $result;
     }
 
@@ -253,28 +270,28 @@ class Sql
      * @params string $method 處理方法
      * @params string $prepare SQL預處理
      * @params array $data 資料
-     * @params array $table 資料表名
      * @params array $key 條件
      * @return object | null
      */
-    protected function combine($method, $prepare, $data = [], $table = '', $key = [])
+    protected function combine($method, $prepare, $data = [], $key = [])
     {
         if ($prepare) {
             if ($method == 'count' || $method == 'select') {
                 $sort = 0;
                 foreach ($data as $k => $v) {
-                    if (isset($this->tableFieldMap[$table][$k]) && $this->tableFieldMap[$table][$k] == 'int') {
+                    if (isset($this->tableFieldMap['message'][$k]) && $this->tableFieldMap['message'][$k] == 'int') {
                         $prepare->bindValue(':' . $sort, $v, PDO::PARAM_INT);
                     } else {
                         $prepare->bindValue(':' . $sort, $v, PDO::PARAM_STR);
                     }
+
                     $sort++;
                 }
             }
 
             if ($method == 'insert') {
                 foreach ($data as $k => $v) {
-                    if (isset($this->tableFieldMap[$table][$k]) && $this->tableFieldMap[$table][$k] == 'int') {
+                    if (isset($this->tableFieldMap['message'][$k]) && $this->tableFieldMap['message'][$k] == 'int') {
                         $prepare->bindValue(':' . $k, $v, PDO::PARAM_INT);
                     } else {
                         $prepare->bindValue(':' . $k, $v, PDO::PARAM_STR);
@@ -286,11 +303,12 @@ class Sql
                 if (!empty($data)) {
                     $sort = 0;
                     foreach ($data as $k => $v) {
-                        if (isset($this->tableFieldMap[$table][$k]) && $this->tableFieldMap[$table][$k] == 'int') {
+                        if (isset($this->tableFieldMap['message'][$k]) && $this->tableFieldMap['message'][$k] == 'int') {
                             $prepare->bindValue(':value' . $sort, $v, PDO::PARAM_INT);
                         } else {
                             $prepare->bindValue(':value' . $sort, $v, PDO::PARAM_STR);
                         }
+
                         $sort++;
                     }
                 }
@@ -298,15 +316,17 @@ class Sql
                 if (!empty($key)) {
                     $sort = 0;
                     foreach ($key as $k => $v) {
-                        if (isset($this->tableFieldMap[$table][$k]) && $this->tableFieldMap[$table][$k] == 'int') {
+                        if (isset($this->tableFieldMap['message'][$k]) && $this->tableFieldMap['message'][$k] == 'int') {
                             $prepare->bindValue(':field' . $sort, $v, PDO::PARAM_INT);
                         } else {
                             $prepare->bindValue(':field' . $sort, $v, PDO::PARAM_STR);
                         }
+
                         $sort++;
                     }
                 }
             }
+
             $prepare->execute();
 
             return $prepare;
@@ -351,6 +371,7 @@ class Sql
         $databasePassword = '4W;<EH.FHB;rt2ugW%Pb';
         $databaseName = 'shin_message';
         $databaseConnect = 'mysql:host=' . $databaseHost . ';dbname=' . $databaseName;
+
         try {
             $conn = new PDO($databaseConnect, $databaseUser, $databasePassword);
             $conn->exec('SET CHARACTER SET utf8');
@@ -363,5 +384,3 @@ class Sql
         }
     }
 }
-
-

@@ -1,19 +1,6 @@
-
-
 <link rel="stylesheet" href="./style.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
 
 <script>
-    $success = "<?php echo isset($_COOKIE['success']) ? $_COOKIE['success'] : ''; ?>";
-    $warning = "<?php echo isset($_COOKIE['warning']) ? $_COOKIE['warning'] : ''; ?>";
+    $alert = "<?php echo isset($_GET['alert']) ? $_GET['alert'] : '';?>";
 </script>
-
-<?php
-if (isset($_COOKIE['success'])) {
-    unset($_COOKIE['success']);
-    setcookie('success', null, -1);
-}
-if (isset($_COOKIE['warning'])) {
-    unset($_COOKIE['warning']);
-    setcookie('warning', null, -1);
-}
-?>

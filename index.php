@@ -1,8 +1,11 @@
+<?php session_start(); ?>
 <!DOCTYPE html>
 <html lang="zh-tw">
     <head>
         <title>Message</title>
-        <?php require_once dirname(__FILE__) . '/head.php'; ?>
+        <?php
+        require_once dirname(__FILE__) . '/head.php';
+        ?>
 
     </head>
     <body>
