@@ -15,7 +15,7 @@ class Sql
     ];
 
     /**
-     * 表欄位對應
+     * 表欄位對應及型態
      *
      * @var array
      */
@@ -39,16 +39,16 @@ class Sql
     public function getCount($table = '', $where = [])
     {
         if ($table && !empty($where)) {
-            $conn_prepare = $this->Prepare('count', $table, $where);
-            $conn_prepare = $this->Combine('count', $conn_prepare, $where, $table);
-            $result       = $this->Output('one', $conn_prepare);
+            $connPrepare = $this->prep('count', $table, $where);
+            $connPrepare = $this->combine('count', $connPrepare, $where, $table);
+            $result      = $this->output('one', $connPrepare);
 
             if ($result) {
                 return $result['COUNT(1)'];
             }
         }
 
-        return null;
+        return 0;
     }
 
     /**
@@ -61,9 +61,9 @@ class Sql
     public function getOne($table = '', $where = [])
     {
         if ($table && !empty($where)) {
-            $conn_prepare = $this->Prepare('select', $table, $where);
-            $conn_prepare = $this->Combine('select', $conn_prepare, $where, $table);
-            $result       = $this->Output('one', $conn_prepare);
+            $connPrepare = $this->prep('select', $table, $where);
+            $connPrepare = $this->combine('select', $connPrepare, $where, $table);
+            $result      = $this->output('one', $connPrepare);
 
             if ($result) {
                 return $result;
@@ -84,9 +84,9 @@ class Sql
     public function getAll($table = '', $where = [], $limit = [])
     {
         if ($table) {
-            $conn_prepare = $this->Prepare('select', $table, $where, $limit);
-            $conn_prepare = $this->Combine('select', $conn_prepare, $where, $table);
-            $result       = $this->Output('all', $conn_prepare);
+            $connPrepare = $this->prep('select', $table, $where, $limit);
+            $connPrepare = $this->combine('select', $connPrepare, $where, $table);
+            $result      = $this->output('all', $connPrepare);
 
             if ($result) {
                 return $result;
@@ -105,8 +105,8 @@ class Sql
     public function insertData($table = '', $data = [])
     {
         if ($table && !empty($data)) {
-            $conn_prepare = $this->Prepare('insert', $table);
-            $this->Combine('insert', $conn_prepare, $data, $table);
+            $connPrepare = $this->prep('insert', $table);
+            $this->combine('insert', $connPrepare, $data, $table);
         }
     }
 
@@ -120,8 +120,8 @@ class Sql
     public function updateData($table = '', $key = [], $update = [])
     {
         if ($table && !empty($update)) {
-            $conn_prepare = $this->Prepare('update', $table, $update, $key);
-            $this->Combine('update', $conn_prepare, $update, $table, $key);
+            $connPrepare = $this->prep('update', $table, $update, $key);
+            $this->combine('update', $connPrepare, $update, $table, $key);
         }
     }
 
@@ -134,44 +134,44 @@ class Sql
      * @params array $limit 條件
      * @return object | null
      */
-    protected function Prepare($method = '', $table = '', $data = [], $limit = [])
+    protected function prep($method = '', $table = '', $data = [], $limit = [])
     {
         $string  = '';
-        $Connect = $this->Connection();
+        $Connect = $this->connection();
 
         if ($table != '') {
             if ($method == 'count') {
-                $string       .= 'SELECT COUNT(1) ';
-                $string       .= 'FROM ' . $this->tableNameMap[$table] . ' ';
-                $string       .= $this->PrepareString($method, $data);
-                $conn_prepare = $Connect->prepare($string);
+                $string      .= 'SELECT COUNT(1) ';
+                $string      .= 'FROM ' . $this->tableNameMap[$table] . ' ';
+                $string      .= $this->prepString($method, $data);
+                $connPrepare = $Connect->prepare($string);
             }
 
             if ($method == 'select') {
-                $string       .= 'SELECT * ';
-                $string       .= 'FROM ' . $this->tableNameMap[$table] . ' ';
-                $string       .= $this->PrepareString($method, $data);
-                $string       .= $this->PrepareString($method, $limit, null, 'limit');
-                $conn_prepare = $Connect->prepare($string);
+                $string      .= 'SELECT * ';
+                $string      .= 'FROM ' . $this->tableNameMap[$table] . ' ';
+                $string      .= $this->prepString($method, $data);
+                $string      .= $this->prepString($method, $limit, null, 'limit');
+                $connPrepare = $Connect->prepare($string);
             }
 
             if ($method == 'insert') {
-                $string       .= 'INSERT INTO ' . $this->tableNameMap[$table];
-                $string       .= $this->PrepareString($method, null, $table, 'field');
-                $string       .= $this->PrepareString($method, null, $table);
-                $conn_prepare = $Connect->prepare($string);
+                $string      .= 'INSERT INTO ' . $this->tableNameMap[$table];
+                $string      .= $this->prepString($method, null, $table, 'field');
+                $string      .= $this->prepString($method, null, $table);
+                $connPrepare = $Connect->prepare($string);
             }
 
             if ($method == 'update') {
-                $string       .= 'UPDATE ' . $this->tableNameMap[$table];
-                $string       .= $this->PrepareString($method, $data, $table, 'value');
-                $string       .= $this->PrepareString($method, $limit, $table, 'field');
-                $conn_prepare = $Connect->prepare($string);
+                $string      .= 'UPDATE ' . $this->tableNameMap[$table];
+                $string      .= $this->prepString($method, $data, $table, 'value');
+                $string      .= $this->prepString($method, $limit, $table, 'field');
+                $connPrepare = $Connect->prepare($string);
             }
         }
 
-        if (isset($conn_prepare)) {
-            return $conn_prepare;
+        if (isset($connPrepare)) {
+            return $connPrepare;
         }
 
         return null;
@@ -186,7 +186,7 @@ class Sql
      * @params array $mode 功能
      * @return string
      */
-    protected function PrepareString($method = '', $data = [], $table = '', $mode = '')
+    protected function prepString($method = '', $data = [], $table = '', $mode = '')
     {
         if ($method == 'count' || $method == 'select') {
             $condition = [];
@@ -257,7 +257,7 @@ class Sql
      * @params array $key 條件
      * @return object | null
      */
-    protected function Combine($method, $prepare, $data = [], $table = '', $key = [])
+    protected function combine($method, $prepare, $data = [], $table = '', $key = [])
     {
         if ($prepare) {
             if ($method == 'count' || $method == 'select') {
@@ -322,7 +322,7 @@ class Sql
      * @params string $prepare SQL預處理結果
      * @return array
      */
-    protected function Output($type, $prepare)
+    protected function output($type, $prepare)
     {
         $result = [];
 
@@ -342,23 +342,23 @@ class Sql
     /**
      * 資料庫連結
      *
-     * @return object | die
+     * @return object
      */
-    protected function Connection()
+    protected function connection()
     {
-        $dbhost = 'localhost';
-        $dbuser = 'message';
-        $dbpass = '4W;<EH.FHB;rt2ugW%Pb';
-        $dbname = 'shin_message';
-        $dsn    = 'mysql:host=' . $dbhost . ';dbname=' . $dbname;
+        $databaseHost     = 'localhost';
+        $databaseUser     = 'message';
+        $databasePassword = '4W;<EH.FHB;rt2ugW%Pb';
+        $databaseName     = 'shin_message';
+        $databaseConnect  = 'mysql:host=' . $databaseHost . ';dbname=' . $databaseName;
         try {
-            $conn = new PDO($dsn, $dbuser, $dbpass);
+            $conn = new PDO($databaseConnect, $databaseUser, $databasePassword);
             $conn->exec('SET CHARACTER SET utf8');
             $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             return $conn;
         } catch (PDOException $e) {
-            echo 'Connection failed: ' . $e->getMessage();
+            echo 'connection failed: ' . $e->getMessage();
             die;
         }
     }
