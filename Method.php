@@ -1,5 +1,7 @@
 <?php
 
+namespace Way;
+
 class Method
 {
     public function setLocation($url = '')

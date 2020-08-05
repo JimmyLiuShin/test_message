@@ -1,5 +1,9 @@
 <?php
 
+namespace Model;
+
+use \PDO;
+
 /**
  * 資料庫處理
  */

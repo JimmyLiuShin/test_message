@@ -2,6 +2,9 @@
 require_once dirname(__FILE__) . '/Sql.php';
 require_once dirname(__FILE__) . '/Method.php';
 
+use Model\Sql;
+use Way\Method;
+
 new Message();
 
 /**
