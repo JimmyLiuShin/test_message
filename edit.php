@@ -1,21 +1,24 @@
 <!DOCTYPE html>
 <html lang="zh-tw">
     <head>
-        <title>Message</title>
-
-        <?php require_once dirname(__FILE__) . '/head.php'; ?>
-
+        <?php
+        require_once dirname(__FILE__) . '/autoload.php';
+        require_once dirname(__FILE__) . '/head.php';
+        ?>
     </head>
     <body>
         <div class="container-fluid">
 
             <?php
-            require_once dirname(__FILE__) . '/Message.php';
+
+            use Controller\Message;
+
             $Message = new Message();
-            $Data    = $Message->show();
+            $Data = $Message->show();
+            $Data || header('Location:./?alert=error');
             ?>
 
-            <form class="row" method="post" action="./Message.php">
+            <form class="row" method="post" action="./submit.php">
 
                 <div class="col-md-8">
                     <input type="hidden" name="method" value="edit">
@@ -26,7 +29,7 @@
                     <textarea class="form-control mt-4" name="content" placeholder="留言"
                               style="height: 30vh"><?php echo urldecode($Data['message_content']); ?></textarea>
 
-                    <button class="btn btn-success mt-4">
+                    <button class="btn btn-success mt-4" type="submit">
                         送出
                     </button>
                 </div>

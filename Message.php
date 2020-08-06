@@ -1,11 +1,8 @@
 <?php
-require_once dirname(__FILE__) . '/Sql.php';
-require_once dirname(__FILE__) . '/Method.php';
+
+namespace Controller;
 
 use Model\Sql;
-use Way\Method;
-
-new Message();
 
 /**
  * 留言板訊息
@@ -13,46 +10,15 @@ new Message();
 class Message
 {
     /**
-     * 網頁位置位址
-     *
-     * @var array
-     */
-    protected $urlNameMap = [
-        'index' => './',
-    ];
-
-    /**
      * SQL連接
      *
      * @var object
      */
-    protected $sqlMap;
-
-    /**
-     * 提示
-     *
-     * @var string
-     */
-    protected $alertMap = '?alert=';
+    protected $sqlMap = null;
 
     public function __construct()
     {
         $this->sqlMap = new Sql();
-        $this->selectFunction();
-    }
-
-    /**
-     * 判斷引入來源
-     */
-    public function selectFunction()
-    {
-        $selected = isset($_POST['method']) ? $_POST['method'] : null;
-        $selected = isset($_GET['method']) ? $_GET['method'] : $selected;
-        $selected = $selected ? $selected : 'index';
-
-        if (method_exists($this, $selected)) {
-            $this->{$selected}();
-        }
     }
 
     /**
@@ -66,8 +32,8 @@ class Message
             'message_status' => 1,
         ];
 
-        $count = isset($_GET['count']) ? (int)$_GET['count'] : 10;
-        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $count = (isset($_GET['count']) && $_GET['count'] > 0) ? (int)$_GET['count'] : 10;
+        $page = (isset($_GET['page']) && $_GET['page'] > 0) ? (int)$_GET['page'] : 1;
         $limit = $this->setPage($where, $page, $count);
         $list = $this->sqlMap->getSelected($where, $limit);
         $list = ($list === null) ? [] : $list;
@@ -78,28 +44,24 @@ class Message
     /**
      * 新增留言
      */
-    protected function add()
+    public function add()
     {
         $insertData = [
             'message_person' => isset($_POST['person']) ? urlencode($_POST['person']) : null,
             'message_content' => isset($_POST['content']) ? urlencode($_POST['content']) : null,
             'message_time' => date('Y-m-d H:i:s'),
-            'message_status' => 1,
         ];
 
         if ($this->addCheck($insertData)) {
             $insertId = $this->sqlMap->insertData($insertData);
 
             if ($insertId > 0) {
-                $this->alertMap .= 'success';
-            } else {
-                $this->alertMap .= 'error';
+                header('Location:./?alert=success');
+                exit;
             }
-        } else {
-            $this->alertMap .= 'error';
         }
 
-        Method::setLocation($this->urlNameMap['index'] . $this->alertMap);
+        header('Location:./?alert=error');
     }
 
     /**
@@ -109,7 +71,7 @@ class Message
      */
     public function show()
     {
-        $id = $_GET['id'] ? (int)$_GET['id'] : 0;
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
         if ($id > 0 && gettype($id) == 'integer') {
             $where = [
@@ -119,80 +81,63 @@ class Message
 
             $item = $this->sqlMap->getOne($where);
 
-            if ($item) {
-                return $item;
-            }
+            return !empty($item) ? $item : [];
         }
 
-        $this->alertMap .= 'error';
-        Method::setLocation($this->urlNameMap['index'] . $this->alertMap);
+        return [];
     }
 
     /**
      * 刪除留言
      */
-    protected function delete()
+    public function delete()
     {
-        $id = $_POST['id'] ? (int)$_POST['id'] : 0;
+        $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 
-        if ($id > 0) {
+        if ($id > 0 && gettype($id) == 'integer') {
             $rowCount = $this->sqlMap->updateData(['id' => $id], ['message_status' => 2]);
 
             if ($rowCount > 0) {
-                $this->alertMap .= 'success';
-            } else {
-                $this->alertMap .= 'error';
+                header('Location:./?alert=success');
+                exit;
             }
-        } else {
-            $this->alertMap .= 'error';
         }
 
-        Method::setLocation($this->urlNameMap['index'] . $this->alertMap);
+        header('Location:./?alert=error');
     }
 
     /**
      * 修改留言
      */
-    protected function edit()
+    public function edit()
     {
-        $id = $_POST['id'] ? (int)$_POST['id'] : 0;
+        $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
         $updateData = [
             'message_person' => isset($_POST['person']) ? urlencode($_POST['person']) : null,
             'message_content' => isset($_POST['content']) ? urlencode($_POST['content']) : null,
         ];
 
-        if ($id > 0 && $this->addCheck($updateData)) {
+        if ($id > 0 && gettype($id) == 'integer' && $this->addCheck($updateData)) {
             $rowCount = $this->sqlMap->updateData(['id' => $id], $updateData);
 
             if ($rowCount > 0) {
-                $this->alertMap .= 'success';
-            } else {
-                $this->alertMap .= 'error';
+                header('Location:./?alert=success');
+                exit;
             }
-        } else {
-            $this->alertMap .= 'error';
         }
 
-        Method::setLocation($this->urlNameMap['index'] . $this->alertMap);
+        header('Location:./?alert=error');
     }
 
     /**
-     * 檢查 新增內容
+     * 檢查新增內容
      *
      * @params array $data 資料
      * @return boolean
      */
     protected function addCheck($data)
     {
-        if ($data['message_person'] == null) {
-            return false;
-        }
-
-        if ($data['message_content'] == null) {
-            return false;
-        }
-
-        return true;
+        return (($data['message_person'] == null) || ($data['message_content'] == null)) ? false : true;
     }
 
     /**
@@ -203,14 +148,14 @@ class Message
      * @params string $count 每頁默認個數
      * @return array
      */
-    protected function setPage($condition = [], $page = 1, $count = 10)
+    protected function setPage($condition = [], $page = 1, $count = 5)
     {
         $total = $this->sqlMap->getCount($condition);
         $limit = [
             'total' => $total,
             'count' => $count,
             'page_now' => $page,
-            'page_max' => ceil($total / $count),
+            'page_max' => ceil($total / $count) < 1 ? 1 : ceil($total / $count),
             'start' => $count * ($page - 1),
             'final' => ($count * $page) - 1,
         ];
