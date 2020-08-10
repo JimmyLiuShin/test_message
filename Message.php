@@ -36,7 +36,7 @@ class Message
         $page = (isset($_GET['page']) && $_GET['page'] > 0) ? (int)$_GET['page'] : 1;
         $limit = $this->setPage($where, $page, $count);
         $list = $this->sqlMap->getSelected($where, $limit);
-        $list = ($list === null) ? [] : $list;
+        $list = is_null($list) ? [] : $list;
 
         return ['list' => $list, 'limit' => $limit];
     }
@@ -52,16 +52,19 @@ class Message
             'message_time' => date('Y-m-d H:i:s'),
         ];
 
-        if ($this->addCheck($insertData)) {
+        if ($insertData['message_person'] &&
+            $insertData['message_content'] &&
+            (strlen($insertData['message_person']) <= 50) &&
+            (strlen($insertData['message_content']) <= 255)) {
             $insertId = $this->sqlMap->insertData($insertData);
 
             if ($insertId > 0) {
-                header('Location:./?alert=success');
+                header('Location:./?alert=success_add');
                 exit;
             }
         }
 
-        header('Location:./?alert=error');
+        header('Location:./?alert=error_addFail');
     }
 
     /**
@@ -72,8 +75,13 @@ class Message
     public function show()
     {
         $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        $default = [
+            'id' => 0,
+            'message_person' => '',
+            'message_content' => '',
+        ];
 
-        if ($id > 0 && gettype($id) == 'integer') {
+        if ($id > 0) {
             $where = [
                 'id' => $id,
                 'message_status' => 1,
@@ -81,10 +89,10 @@ class Message
 
             $item = $this->sqlMap->getOne($where);
 
-            return !empty($item) ? $item : [];
+            return !empty($item) ? $item : $default;
         }
 
-        return [];
+        return $default;
     }
 
     /**
@@ -94,16 +102,16 @@ class Message
     {
         $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 
-        if ($id > 0 && gettype($id) == 'integer') {
-            $rowCount = $this->sqlMap->updateData(['id' => $id], ['message_status' => 2]);
+        if ($id > 0) {
+            $rowCount = $this->sqlMap->updateData($id, ['message_status' => 2]);
 
             if ($rowCount > 0) {
-                header('Location:./?alert=success');
+                header('Location:./?alert=success_delete');
                 exit;
             }
         }
 
-        header('Location:./?alert=error');
+        header('Location:./?alert=error_delFail');
     }
 
     /**
@@ -117,27 +125,20 @@ class Message
             'message_content' => isset($_POST['content']) ? urlencode($_POST['content']) : null,
         ];
 
-        if ($id > 0 && gettype($id) == 'integer' && $this->addCheck($updateData)) {
-            $rowCount = $this->sqlMap->updateData(['id' => $id], $updateData);
+        if ($id > 0 &&
+            $updateData['message_person'] &&
+            $updateData['message_content'] &&
+            (strlen($updateData['message_person']) <= 50) &&
+            (strlen($updateData['message_content']) <= 255)) {
+            $rowCount = $this->sqlMap->updateData($id, $updateData);
 
             if ($rowCount > 0) {
-                header('Location:./?alert=success');
+                header('Location:./?alert=success_edit');
                 exit;
             }
         }
 
-        header('Location:./?alert=error');
-    }
-
-    /**
-     * 檢查新增內容
-     *
-     * @params array $data 資料
-     * @return boolean
-     */
-    protected function addCheck($data)
-    {
-        return (($data['message_person'] == null) || ($data['message_content'] == null)) ? false : true;
+        header('Location:./?alert=error_editFail');
     }
 
     /**

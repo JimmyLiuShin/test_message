@@ -27,8 +27,56 @@
             });
         }
 
+        if ($alert === 'success_add') {
+            Swal.fire('新增成功', '', 'success').then(function () {
+                setLocation();
+            });
+        }
+
+        if ($alert === 'success_delete') {
+            Swal.fire('刪除成功', '', 'success').then(function () {
+                setLocation();
+            });
+        }
+
+        if ($alert === 'success_edit') {
+            Swal.fire('修改成功', '', 'success').then(function () {
+                setLocation();
+            });
+        }
+
         if ($alert === 'error') {
-            Swal.fire('Error', '', 'error').then(function () {
+            Swal.fire('錯誤', '', 'error').then(function () {
+                setLocation();
+            });
+        }
+
+        if ($alert === 'error_addFail') {
+            Swal.fire('新增失敗', '', 'error').then(function () {
+                setLocation();
+            });
+        }
+
+        if ($alert === 'error_delFail') {
+            Swal.fire('刪除失敗', '', 'error').then(function () {
+                setLocation();
+            });
+        }
+
+        if ($alert === 'error_editFail') {
+            Swal.fire('修改失敗', '', 'error').then(function () {
+                setLocation();
+            });
+        }
+
+        if ($alert === 'error_notFind') {
+            Swal.fire('找不到該筆資料', '', 'error').then(function () {
+                setLocation();
+            });
+        }
+
+        if ($alert === 'error_noFunction') {
+            Swal.fire('找不到處理方法', '', 'error').then(function () {
                 setLocation();
             });
         }

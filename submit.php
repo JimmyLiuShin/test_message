@@ -3,12 +3,12 @@ require_once dirname(__FILE__) . '/autoload.php';
 
 use Controller\Message;
 
-$Message = new Message();
+$message = new Message();
 $method = isset($_POST['method']) ? $_POST['method'] : null;
 
-if (method_exists($Message, $method)) {
-    $Message->{$method}();
+if (method_exists($message, $method)) {
+    $message->{$method}();
     exit;
 }
 
-header('Location:./?alert=error');
+header('Location:./?alert=error_noFunction');

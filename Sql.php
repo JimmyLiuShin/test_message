@@ -36,261 +36,6 @@ class Sql
         $this->connectMap = $this->connection();
     }
 
-    public function __destruct()
-    {
-        $this->disconnect();
-    }
-
-    /**
-     * 取得符合條件之資料個數
-     *
-     * @params array $where SQL條件
-     * @return integer
-     */
-    public function getCount($where = [])
-    {
-        if (!empty($where)) {
-            $string = 'SELECT COUNT(1) ';
-            $string .= 'FROM message_item ';
-            $string .= $this->prepString('count', $where);
-            $connPrepare = $this->connectMap->prepare($string);
-            $sort = 0;
-
-            foreach ($where as $k => $v) {
-                if (isset($this->tableFieldMap['message'][$k]) && $this->tableFieldMap['message'][$k] === 'int') {
-                    $connPrepare->bindValue(':' . $sort, $v, PDO::PARAM_INT);
-                } else {
-                    $connPrepare->bindValue(':' . $sort, $v, PDO::PARAM_STR);
-                }
-
-                $sort++;
-            }
-
-            $connPrepare->execute();
-            $result = $connPrepare->fetch(PDO::FETCH_ASSOC);
-            return isset($result['COUNT(1)']) ? $result['COUNT(1)'] : 0;
-        }
-
-        return 0;
-    }
-
-    /**
-     * 取得一筆資料
-     *
-     * @params array $where SQL條件
-     * @return array
-     */
-    public function getOne($where = [])
-    {
-        if (!empty($where)) {
-            $string = 'SELECT * ';
-            $string .= 'FROM message_item ';
-            $string .= $this->prepString('select', $where);
-            $connPrepare = $this->connectMap->prepare($string);
-            $sort = 0;
-
-            foreach ($where as $k => $v) {
-                if (isset($this->tableFieldMap['message'][$k]) && $this->tableFieldMap['message'][$k] == 'int') {
-                    $connPrepare->bindValue(':' . $sort, $v, PDO::PARAM_INT);
-                } else {
-                    $connPrepare->bindValue(':' . $sort, $v, PDO::PARAM_STR);
-                }
-
-                $sort++;
-            }
-
-            $connPrepare->execute();
-            $result = $connPrepare->fetch(PDO::FETCH_ASSOC);
-
-            return !empty($result) ? $result : [];
-        }
-
-        return [];
-    }
-
-    /**
-     * 取得多筆資料
-     *
-     * @params array $where SQL條件
-     * @params array $limit 輸出限制
-     * @return array
-     */
-    public function getSelected($where = [], $limit = [])
-    {
-        $string = 'SELECT * ';
-        $string .= 'FROM message_item ';
-        $string .= !empty($limit) ? $this->prepString('select', $where) : '';
-        $string .= !empty($limit) ? $this->prepString('select', $limit, 'limit') : '';
-        $connPrepare = $this->connectMap->prepare($string);
-        $sort = 0;
-
-        foreach ($where as $k => $v) {
-            if (isset($this->tableFieldMap['message'][$k]) && $this->tableFieldMap['message'][$k] == 'int') {
-                $connPrepare->bindValue(':' . $sort, $v, PDO::PARAM_INT);
-            } else {
-                $connPrepare->bindValue(':' . $sort, $v, PDO::PARAM_STR);
-            }
-
-            $sort++;
-        }
-
-        $connPrepare->execute();
-        $result = $connPrepare->fetchAll(PDO::FETCH_ASSOC);
-
-        return !empty($result) ? $result : [];
-    }
-
-    /**
-     * 新增資料
-     *
-     * @params array $data 新增內容
-     * @return integer
-     */
-    public function insertData($data = [])
-    {
-        $insertId = 0;
-
-        if (!empty($data)) {
-            $string = 'INSERT INTO message_item';
-            $string .= $this->prepString('insert', null, 'field');
-            $string .= $this->prepString('insert', null);
-            $connPrepare = $this->connectMap->prepare($string);
-
-            foreach ($data as $k => $v) {
-                if (isset($this->tableFieldMap['message'][$k]) && $this->tableFieldMap['message'][$k] == 'int') {
-                    $connPrepare->bindValue(':' . $k, $v, PDO::PARAM_INT);
-                } else {
-                    $connPrepare->bindValue(':' . $k, $v, PDO::PARAM_STR);
-                }
-            }
-
-            $connPrepare->execute();
-            $insertId = $this->connectMap->lastInsertId();
-        }
-
-        return $insertId;
-    }
-
-    /**
-     * 更新資料
-     *
-     * @params array $key 條件
-     * @params array $update 更新內容
-     * @return integer
-     */
-    public function updateData($key = [], $update = [])
-    {
-        $insertRow = 0;
-
-        if (!empty($update)) {
-            $string = 'UPDATE message_item';
-            $string .= $this->prepString('update', $update, 'value');
-            $string .= !empty($key) ? $this->prepString('update', $key, 'field') : '';
-            $connPrepare = $this->connectMap->prepare($string);
-            $sort = 0;
-
-            foreach ($update as $k => $v) {
-                if (isset($this->tableFieldMap['message'][$k]) && $this->tableFieldMap['message'][$k] == 'int') {
-                    $connPrepare->bindValue(':value' . $sort, $v, PDO::PARAM_INT);
-                } else {
-                    $connPrepare->bindValue(':value' . $sort, $v, PDO::PARAM_STR);
-                }
-
-                $sort++;
-            }
-
-            if (!empty($key)) {
-                $sort = 0;
-
-                foreach ($key as $k => $v) {
-                    if (isset($this->tableFieldMap['message'][$k]) && $this->tableFieldMap['message'][$k] == 'int') {
-                        $connPrepare->bindValue(':field' . $sort, $v, PDO::PARAM_INT);
-                    } else {
-                        $connPrepare->bindValue(':field' . $sort, $v, PDO::PARAM_STR);
-                    }
-
-                    $sort++;
-                }
-            }
-
-            $connPrepare->execute();
-            $insertRow = $connPrepare->rowCount();
-        }
-
-        return $insertRow;
-    }
-
-    /**
-     * SQL預處理 - 預處理字串產生
-     *
-     * @params string $method 處理方法
-     * @params string $data 資料
-     * @params array $mode 功能
-     * @return string
-     */
-    protected function prepString($method = '', $data = [], $mode = '')
-    {
-        if ($method == 'count' || $method == 'select') {
-            $condition = [];
-
-            if (!empty($data) && $mode == 'limit') {
-                $result = ' LIMIT ' . $data['start'] . ', ' . $data['count'];
-            } else {
-                if (!empty($data)) {
-                    $sort = 0;
-                    foreach ($data as $k => $v) {
-                        $condition[] = $k . ' = :' . $sort;
-                        $sort++;
-                    }
-                }
-
-                $result = !empty($condition) ? 'WHERE ' . implode(' and ', $condition) : '';
-            }
-        }
-
-        if ($method == 'insert') {
-            $condition = [];
-
-            if (isset($this->tableFieldMap['message'])) {
-                foreach ($this->tableFieldMap['message'] as $k => $v) {
-                    if ($k != 'id' && $k != 'message_status') {
-                        if ($mode == 'field') {
-                            $condition[] = $k;
-                        } else {
-                            $condition[] = ':' . $k;
-                        }
-                    }
-                }
-            }
-
-            if ($mode == 'field') {
-                $result = !empty($condition) ? '(' . implode(', ', $condition) . ') ' : ' ';
-            } else {
-                $result = !empty($condition) ? 'VALUES(' . implode(', ', $condition) . ')' : ' ';
-            }
-        }
-
-        if ($method == 'update') {
-            $condition = [];
-
-            if (!empty($data)) {
-                $sort = 0;
-                foreach ($data as $k => $v) {
-                    $condition[] = $k . ' = :' . $mode . $sort;
-                    $sort++;
-                }
-            }
-
-            if ($mode == 'field') {
-                $result = !empty($condition) ? ' WHERE ' . implode(', ', $condition) : '';
-            } else {
-                $result = !empty($condition) ? ' SET ' . implode(', ', $condition) : '';
-            }
-        }
-
-        return $result;
-    }
-
     /**
      * 資料庫連結
      *
@@ -316,6 +61,11 @@ class Sql
         }
     }
 
+    public function __destruct()
+    {
+        $this->disconnect();
+    }
+
     /**
      * 取消資料庫連結
      *
@@ -324,5 +74,230 @@ class Sql
     protected function disconnect()
     {
         !empty($this->connectMap) && $this->connectMap = null;
+    }
+
+    /**
+     * 取得符合條件之資料個數
+     *
+     * @params array $where SQL條件
+     * @return integer
+     */
+    public function getCount($where = [])
+    {
+        $string = 'SELECT COUNT(1) ';
+        $string .= 'FROM message_item ';
+
+        if (!empty($where)) {
+            $string .= 'WHERE ';
+            $sort = 0;
+
+            foreach ($where as $key => $value) {
+                $string .= ($sort > 0 ? 'AND ' : '') . $key . ' = :' . $key . ' ';
+                $sort++;
+            }
+
+            $string .= '';
+        }
+
+        $connPrepare = $this->connectMap->prepare($string);
+
+        if (!empty($where)) {
+            foreach ($where as $key => $value) {
+                if (isset($this->tableFieldMap['message'][$key]) && $this->tableFieldMap['message'][$key] === 'int') {
+                    $connPrepare->bindValue(':' . $key, $value, PDO::PARAM_INT);
+                } else {
+                    $connPrepare->bindValue(':' . $key, $value, PDO::PARAM_STR);
+                }
+            }
+        }
+
+        $connPrepare->execute();
+        $result = $connPrepare->fetch(PDO::FETCH_ASSOC);
+
+        return isset($result['COUNT(1)']) ? $result['COUNT(1)'] : 0;
+    }
+
+    /**
+     * 取得一筆資料
+     *
+     * @params array $where SQL條件
+     * @return array
+     */
+    public function getOne($where = [])
+    {
+        $string = 'SELECT * ';
+        $string .= 'FROM message_item ';
+
+        if (!empty($where)) {
+            $string .= 'WHERE ';
+            $sort = 0;
+
+            foreach ($where as $key => $value) {
+                $string .= ($sort > 0 ? 'AND ' : '') . $key . ' = :' . $key . ' ';
+                $sort++;
+            }
+
+            $string .= '';
+        }
+
+        $connPrepare = $this->connectMap->prepare($string);
+
+        if (!empty($where)) {
+            foreach ($where as $key => $value) {
+                if (isset($this->tableFieldMap['message'][$key]) && $this->tableFieldMap['message'][$key] == 'int') {
+                    $connPrepare->bindValue(':' . $key, $value, PDO::PARAM_INT);
+                } else {
+                    $connPrepare->bindValue(':' . $key, $value, PDO::PARAM_STR);
+                }
+
+                $sort++;
+            }
+        }
+
+        $connPrepare->execute();
+        $result = $connPrepare->fetch(PDO::FETCH_ASSOC);
+
+        return !empty($result) ? $result : [];
+    }
+
+    /**
+     * 取得多筆資料
+     *
+     * @params array $where SQL條件
+     * @params array $limit 輸出限制
+     * @return array
+     */
+    public function getSelected($where = [], $limit = [])
+    {
+        $string = 'SELECT * ';
+        $string .= 'FROM message_item ';
+
+        if (!empty($where)) {
+            $string .= 'WHERE ';
+            $sort = 0;
+
+            foreach ($where as $key => $value) {
+                $string .= ($sort > 0 ? 'AND ' : '') . $key . ' = :' . $key . ' ';
+                $sort++;
+            }
+
+            $string .= '';
+        }
+
+        if (!empty($limit)) {
+            $string .= 'LIMIT ' . $limit['start'] . ', ' . $limit['count'];
+        }
+
+        $connPrepare = $this->connectMap->prepare($string);
+
+        if (!empty($where)) {
+            foreach ($where as $key => $value) {
+                if (isset($this->tableFieldMap['message'][$key]) && $this->tableFieldMap['message'][$key] == 'int') {
+                    $connPrepare->bindValue(':' . $key, $value, PDO::PARAM_INT);
+                } else {
+                    $connPrepare->bindValue(':' . $key, $value, PDO::PARAM_STR);
+                }
+            }
+        }
+
+        $connPrepare->execute();
+        $result = $connPrepare->fetchAll(PDO::FETCH_ASSOC);
+
+        return !empty($result) ? $result : [];
+    }
+
+    /**
+     * 新增資料
+     *
+     * @params array $data 新增內容
+     * @return integer
+     */
+    public function insertData($data = [])
+    {
+        $string = 'INSERT INTO message_item';
+
+        if (!empty($data)) {
+            $string .= '(';
+            $sort = 0;
+
+            foreach ($this->tableFieldMap['message'] as $key => $value) {
+                if ($key != 'id' && $key != 'message_status') {
+                    $string .= ($sort > 0 ? ', ' : '') . $key;
+                    $sort++;
+                }
+            }
+
+            $string .= ') VALUES(';
+            $sort = 0;
+
+            foreach ($this->tableFieldMap['message'] as $key => $value) {
+                if ($key != 'id' && $key != 'message_status') {
+                    $string .= ($sort > 0 ? ', ' : '') . ':' . $key;
+                    $sort++;
+                }
+            }
+
+            $string .= ')';
+        }
+
+        $connPrepare = $this->connectMap->prepare($string);
+
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                if (isset($this->tableFieldMap['message'][$key]) && $this->tableFieldMap['message'][$key] == 'int') {
+                    $connPrepare->bindValue(':' . $key, $value, PDO::PARAM_INT);
+                } else {
+                    $connPrepare->bindValue(':' . $key, $value, PDO::PARAM_STR);
+                }
+            }
+        }
+
+        $connPrepare->execute();
+        $insertId = $this->connectMap->lastInsertId();
+
+        return $insertId;
+    }
+
+    /**
+     * 更新資料
+     *
+     * @params array $key 條件
+     * @params array $data 更新內容
+     * @return integer
+     */
+    public function updateData($id, $data = [])
+    {
+        $string = 'UPDATE message_item ';
+
+        if (!empty($data)) {
+            $string .= 'SET ';
+            $sort = 0;
+
+            foreach ($data as $key => $value) {
+                $string .= ($sort > 0 ? ', ' : '') . $key . ' = :' . $key . ' ';
+                $sort++;
+            }
+
+            $string .= 'WHERE id = :id';
+        }
+
+        $connPrepare = $this->connectMap->prepare($string);
+
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                if (isset($this->tableFieldMap['message'][$key]) && $this->tableFieldMap['message'][$key] == 'int') {
+                    $connPrepare->bindValue(':' . $key, $value, PDO::PARAM_INT);
+                } else {
+                    $connPrepare->bindValue(':' . $key, $value, PDO::PARAM_STR);
+                }
+            }
+
+            $connPrepare->bindValue(':id', $id, PDO::PARAM_INT);
+        }
+
+        $connPrepare->execute();
+        $insertRow = $connPrepare->rowCount();
+
+        return $insertRow;
     }
 }
