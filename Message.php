@@ -24,16 +24,16 @@ class Message
     /**
      * index.php 引用
      *
+     * @params integer $count 單頁筆數
+     * @params integer $page 頁數
      * @return array
      */
-    public function index()
+    public function index($count = 1, $page = 1)
     {
         $where = [
             'message_status' => 1,
         ];
 
-        $count = (isset($_GET['count']) && $_GET['count'] > 0) ? (int)$_GET['count'] : 10;
-        $page = (isset($_GET['page']) && $_GET['page'] > 0) ? (int)$_GET['page'] : 1;
         $limit = $this->setPage($where, $page, $count);
         $list = $this->sqlMap->getSelected($where, $limit);
         $list = is_null($list) ? [] : $list;
@@ -43,38 +43,48 @@ class Message
 
     /**
      * 新增留言
+     *
+     * @params string $person 留言人
+     * @params string $content 留言內容
+     * @return string
      */
-    public function add()
+    public function add($person, $content)
     {
         $insertData = [
-            'message_person' => isset($_POST['person']) ? urlencode($_POST['person']) : null,
-            'message_content' => isset($_POST['content']) ? urlencode($_POST['content']) : null,
+            'message_person' => $person ? urlencode($person) : null,
+            'message_content' => $content ? urlencode($content) : null,
             'message_time' => date('Y-m-d H:i:s'),
         ];
 
-        if ($insertData['message_person'] &&
-            $insertData['message_content'] &&
-            (strlen($insertData['message_person']) <= 50) &&
-            (strlen($insertData['message_content']) <= 255)) {
-            $insertId = $this->sqlMap->insertData($insertData);
-
-            if ($insertId > 0) {
-                header('Location:./?alert=success_add');
-                exit;
-            }
+        if (!$insertData['message_person']) {
+            return 'error_personNull';
         }
 
-        header('Location:./?alert=error_addFail');
+        if (!$insertData['message_content']) {
+            return 'error_contentNull';
+        }
+
+        if (strlen($insertData['message_person']) > 50) {
+            return 'error_personOverLimit';
+        }
+
+        if (strlen($insertData['message_content']) > 255) {
+            return 'error_contentOverLimit';
+        }
+
+        $insertId = $this->sqlMap->insertData($insertData);
+
+        return ($insertId > 0) ? 'success_add' : 'error_addFail';
     }
 
     /**
      * 搜尋單筆留言
      *
+     * @params integer $id 留言ID
      * @return array
      */
-    public function show()
+    public function show($id = 0)
     {
-        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
         $default = [
             'id' => 0,
             'message_person' => '',
@@ -97,48 +107,67 @@ class Message
 
     /**
      * 刪除留言
+     *
+     * @params integer $id 留言ID
+     * @return string
      */
-    public function delete()
+    public function delete($id)
     {
-        $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+        $select = $this->sqlMap->getOne(['id' => $id]);
 
-        if ($id > 0) {
+        if (!empty($select)) {
             $rowCount = $this->sqlMap->updateData($id, ['message_status' => 2]);
 
             if ($rowCount > 0) {
-                header('Location:./?alert=success_delete');
-                exit;
+                return 'success_delete';
             }
         }
 
-        header('Location:./?alert=error_delFail');
+        return 'error_delFail';
     }
 
     /**
      * 修改留言
+     *
+     * @params integer $id 留言ID
+     * @params string $person 留言人
+     * @params string $content 留言內容
+     * @return string
      */
-    public function edit()
+    public function edit($id = 0, $person = '', $content = '')
     {
-        $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
         $updateData = [
-            'message_person' => isset($_POST['person']) ? urlencode($_POST['person']) : null,
-            'message_content' => isset($_POST['content']) ? urlencode($_POST['content']) : null,
+            'message_person' => $person ? urlencode($person) : null,
+            'message_content' => $content ? urlencode($content) : null,
         ];
 
-        if ($id > 0 &&
-            $updateData['message_person'] &&
-            $updateData['message_content'] &&
-            (strlen($updateData['message_person']) <= 50) &&
-            (strlen($updateData['message_content']) <= 255)) {
+        $select = $this->sqlMap->getOne(['id' => $id]);
+
+        if (!empty($select)) {
+            if (!$updateData['message_person']) {
+                return 'error_personNull';
+            }
+
+            if (!$updateData['message_content']) {
+                return 'error_contentNull';
+            }
+
+            if (strlen($updateData['message_person']) > 50) {
+                return 'error_personOverLimit';
+            }
+
+            if (strlen($updateData['message_content']) > 255) {
+                return 'error_contentOverLimit';
+            }
+
             $rowCount = $this->sqlMap->updateData($id, $updateData);
 
             if ($rowCount > 0) {
-                header('Location:./?alert=success_edit');
-                exit;
+                return 'success_edit';
             }
         }
 
-        header('Location:./?alert=error_editFail');
+        return 'error_editFail';
     }
 
     /**

@@ -14,7 +14,9 @@
             use Controller\Message;
 
             $message = new Message();
-            $data = $message->index();
+            $count = (isset($_GET['count']) && $_GET['count'] > 0) ? (int)$_GET['count'] : 10;
+            $page = (isset($_GET['page']) && $_GET['page'] > 0) ? (int)$_GET['page'] : 1;
+            $data = $message->index($count, $page);
             ?>
 
             <div class="row">
@@ -56,7 +58,8 @@
 
                                             <div class="col-md-10">
                                                 <h5 class="card-title">
-                                                    <?= nl2br(urldecode($value['message_content'])) ?>
+                                                    <textarea class="form-control"
+                                                              disabled><?= urldecode($value['message_content']) ?></textarea>
                                                 </h5>
                                                 <p class="card-text">
                                                     <?= urldecode($value['message_person']) ?>
@@ -94,8 +97,8 @@
                 <div class="col-md-4">
                     <form method="post" action="./submit.php">
                         <input type="hidden" name="method" value="add">
-                        <input class="form-control mt-4" type="text" name="person" placeholder="姓名">
-                        <textarea class="form-control mt-4" name="content" placeholder="留言"
+                        <input class="form-control mt-4" type="text" name="person" placeholder="姓名" required>
+                        <textarea class="form-control mt-4" name="content" placeholder="留言" required
                                   style="height: 30vh"></textarea>
                         <button class="btn btn-success mt-4">送出</button>
                     </form>

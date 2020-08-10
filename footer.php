@@ -57,6 +57,30 @@
             });
         }
 
+        if ($alert === 'error_personNull') {
+            Swal.fire('姓名不得為空', '', 'error').then(function () {
+                setLocation();
+            });
+        }
+
+        if ($alert === 'error_contentNull') {
+            Swal.fire('內容不得為空', '', 'error').then(function () {
+                setLocation();
+            });
+        }
+
+        if ($alert === 'error_personOverLimit') {
+            Swal.fire('姓名字數超過限制', '', 'error').then(function () {
+                setLocation();
+            });
+        }
+
+        if ($alert === 'error_contentOverLimit') {
+            Swal.fire('內容字數超過限制', '', 'error').then(function () {
+                setLocation();
+            });
+        }
+
         if ($alert === 'error_delFail') {
             Swal.fire('刪除失敗', '', 'error').then(function () {
                 setLocation();
