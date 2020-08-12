@@ -41,7 +41,7 @@ class Sql
      *
      * @return object
      */
-    protected function connection()
+    public function connection()
     {
         $databaseHost = 'localhost';
         $databaseUser = 'message';
@@ -71,7 +71,7 @@ class Sql
      *
      * @params object $connect SQL
      */
-    protected function disconnect()
+    public function disconnect()
     {
         !empty($this->connectMap) && $this->connectMap = null;
     }
@@ -221,7 +221,7 @@ class Sql
             $sort = 0;
 
             foreach ($this->tableFieldMap['message'] as $key => $value) {
-                if ($key != 'id' && $key != 'message_status') {
+                if ($key != 'id' && isset($data[$key])) {
                     $string .= ($sort > 0 ? ', ' : '') . $key;
                     $sort++;
                 }
@@ -231,7 +231,7 @@ class Sql
             $sort = 0;
 
             foreach ($this->tableFieldMap['message'] as $key => $value) {
-                if ($key != 'id' && $key != 'message_status') {
+                if ($key != 'id' && isset($data[$key])) {
                     $string .= ($sort > 0 ? ', ' : '') . ':' . $key;
                     $sort++;
                 }

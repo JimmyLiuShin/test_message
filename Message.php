@@ -38,7 +38,12 @@ class Message
         $list = $this->sqlMap->getSelected($where, $limit);
         $list = is_null($list) ? [] : $list;
 
-        return ['list' => $list, 'limit' => $limit];
+        $data = [
+            'list' => $list,
+            'limit' => $limit
+        ];
+
+        return $data;
     }
 
     /**
@@ -178,8 +183,10 @@ class Message
      * @params string $count 每頁默認個數
      * @return array
      */
-    protected function setPage($condition = [], $page = 1, $count = 5)
+    public function setPage($condition = [], $page = 1, $count = 5)
     {
+        $page = $page < 1 ? 1 : $page;
+        $count = $count < 1 ? 1 : $count;
         $total = $this->sqlMap->getCount($condition);
         $limit = [
             'total' => $total,
@@ -189,10 +196,6 @@ class Message
             'start' => $count * ($page - 1),
             'final' => ($count * $page) - 1,
         ];
-
-        if ($limit['page_now'] <= 0) {
-            $limit = $this->setPage($condition, 1, $count);
-        }
 
         if ($limit['page_now'] > $limit['page_max']) {
             $limit = $this->setPage($condition, $limit['page_max'], $count);
