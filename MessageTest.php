@@ -1,14 +1,25 @@
 <?php
-require_once dirname(__FILE__) . '/autoload.php';
+require_once dirname(__FILE__) . '/vendor/autoload.php';
 
 use PHPUnit\Framework\TestCase;
 use Controller\Message;
 
 /**
- * 留言板訊息
+ * 留言板測試
  */
 class MessageTest extends TestCase
 {
+    /**
+     * 測試 __construct 成功
+     *
+     * @covers       Controller\Message::__construct
+     */
+    public function testConstructor()
+    {
+        $message = new Message();
+        $this->assertTrue(is_object($message));
+    }
+
     public function indexDataProviderInteger()
     {
         return [
@@ -93,7 +104,7 @@ class MessageTest extends TestCase
     {
         return [
             'integer 1' => [0],
-            'integer 2' => [10],
+            'integer 2' => [35],
             'integer 3' => [223],
             'integer 4' => [11111111111111],
         ];
@@ -218,7 +229,7 @@ class MessageTest extends TestCase
     {
         return [
             'integer 1' => [1, 55],
-            'integer 2' => [1, 0],
+            'integer 2' => [999, 999],
             'integer 3' => [0, 552],
             'integer 4' => [10, 55],
         ];
@@ -255,5 +266,4 @@ class MessageTest extends TestCase
         $page = $message->setPage($condition, $page, $count);
         $this->assertTrue(is_array($page));
     }
-
 }

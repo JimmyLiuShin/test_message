@@ -1,23 +1,69 @@
 <?php
-require_once dirname(__FILE__) . '/autoload.php';
+require_once dirname(__FILE__) . '/vendor/autoload.php';
 
 use PHPUnit\Framework\TestCase;
 use Model\Sql;
 
 /**
- * 留言板訊息
+ * 資料庫處理測試
  */
 class SqlTest extends TestCase
 {
     /**
-     * 測試 connection 成功
+     * 測試 __construct 成功
      *
+     * @covers       Model\Sql::__construct
      * @covers       Model\Sql::connection
+     * @covers       Model\Sql::__destruct
+     * @covers       Model\Sql::disconnect
      */
-    public function testConnection()
+    public function testConstructor()
     {
         $sql = new Sql();
-        $this->assertTrue($sql->connection());
+        $this->assertTrue(is_object($sql));
+    }
+
+    public function connectionDataProviderInteger()
+    {
+        return [
+            'integer 1' => [1, 'message', '4W;<EH.FHB;rt2ugW%Pb', 'shin_message'],
+            'integer 2' => ['localhost', 1, '4W;<EH.FHB;rt2ugW%Pb', 'shin_message'],
+            'integer 3' => ['localhost', 'message', 1, 'shin_message'],
+            'integer 4' => ['localhost', 'message', '4W;<EH.FHB;rt2ugW%Pb', 1],
+        ];
+    }
+
+    public function connectionDataProviderString()
+    {
+        return [
+            'string 1' => ['localhost1', 'message', '4W;<EH.FHB;rt2ugW%Pb', 'shin_message'],
+            'string 2' => ['localhost', 'message1', '4W;<EH.FHB;rt2ugW%Pb', 'shin_message'],
+            'string 3' => ['localhost', 'message', '4W;<EH.FHB;rt2ugW%Pb1', 'shin_message'],
+            'string 4' => ['localhost', 'message', '4W;<EH.FHB;rt2ugW%Pb', 'shin_message1'],
+        ];
+    }
+
+    public function connectionDataProvidernull()
+    {
+        return [
+            'null 1' => [null, 'message', '4W;<EH.FHB;rt2ugW%Pb', 'shin_message'],
+            'null 2' => ['localhost', null, '4W;<EH.FHB;rt2ugW%Pb', 'shin_message'],
+            'null 3' => ['localhost', 'message', null, 'shin_message'],
+            'null 4' => ['localhost', 'message', '4W;<EH.FHB;rt2ugW%Pb', null],
+        ];
+    }
+
+    /**
+     * 測試 connection
+     *
+     * @dataProvider connectionDataProviderInteger
+     * @dataProvider connectionDataProviderString
+     * @dataProvider connectionDataProvidernull
+     * @covers       Model\Sql::connection
+     */
+    public function testConnectionError($databaseHost, $databaseUser, $databasePassword, $databaseName)
+    {
+        $this->assertTrue(is_null(Sql::connection($databaseHost, $databaseUser, $databasePassword, $databaseName)));
     }
 
     public function getCountDataProviderWhere()

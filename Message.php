@@ -3,6 +3,7 @@
 namespace Controller;
 
 use Model\Sql;
+use Exception;
 
 /**
  * 留言板訊息
@@ -14,7 +15,7 @@ class Message
      *
      * @var object
      */
-    protected $sqlMap = null;
+    public $sqlMap = null;
 
     public function __construct()
     {
@@ -97,14 +98,23 @@ class Message
         ];
 
         if ($id > 0) {
-            $where = [
-                'id' => $id,
-                'message_status' => 1,
-            ];
+            try {
+                $where = [
+                    'id' => $id,
+                    'message_status' => 1,
+                ];
 
-            $item = $this->sqlMap->getOne($where);
+                $item = $this->sqlMap->getOne($where);
 
-            return !empty($item) ? $item : $default;
+                if (!empty($item)) {
+                    return $item;
+                } else {
+                    throw new Exception('找不到該筆資料');
+                }
+            } catch (Exception $e) {
+                echo $e->getMessage();
+                return $default;
+            }
         }
 
         return $default;

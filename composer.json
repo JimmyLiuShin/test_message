@@ -1,4 +1,12 @@
 {
+    "name": "shin/shin_liu",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Controller\\": "./",
+            "Model\\": "./"
+        }
+    },
     "require-dev": {
         "phpunit/phpunit": "^7.5"
     }

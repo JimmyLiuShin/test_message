@@ -3,6 +3,7 @@
 namespace Model;
 
 use \PDO;
+use PDOException;
 
 /**
  * 資料庫處理
@@ -29,11 +30,15 @@ class Sql
      *
      * @var object
      */
-    protected $connectMap = null;
+    public $connectMap = null;
 
     public function __construct()
     {
-        $this->connectMap = $this->connection();
+        $databaseHost = 'localhost';
+        $databaseUser = 'message';
+        $databasePassword = '4W;<EH.FHB;rt2ugW%Pb';
+        $databaseName = 'shin_message';
+        $this->connectMap = $this->connection($databaseHost, $databaseUser, $databasePassword, $databaseName);
     }
 
     /**
@@ -41,24 +46,22 @@ class Sql
      *
      * @return object
      */
-    public function connection()
+    public function connection($databaseHost, $databaseUser, $databasePassword, $databaseName)
     {
-        $databaseHost = 'localhost';
-        $databaseUser = 'message';
-        $databasePassword = '4W;<EH.FHB;rt2ugW%Pb';
-        $databaseName = 'shin_message';
-        $databaseConnect = 'mysql:host=' . $databaseHost . ';dbname=' . $databaseName;
+        if ($databaseHost && $databaseUser && $databasePassword && $databaseName) {
+            $databaseConnect = 'mysql:host=' . $databaseHost . ';dbname=' . $databaseName;
 
-        try {
-            $conn = new PDO($databaseConnect, $databaseUser, $databasePassword);
-            $conn->exec('SET CHARACTER SET utf8');
-            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            try {
+                $conn = new PDO($databaseConnect, $databaseUser, $databasePassword);
+                $conn->exec('SET CHARACTER SET utf8');
+                $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            return $conn;
-        } catch (PDOException $e) {
-            echo 'connection failed: ' . $e->getMessage();
-            die;
+                return $conn;
+            } catch (PDOException $e) {
+                return null;
+            }
         }
+        return null;
     }
 
     public function __destruct()
